@@ -3,9 +3,9 @@ use std::{collections::HashSet, path::Path};
 use tspf::TspBuilder;
 
 use crate::{
-    alg::{cand_gen_nn, solvers::solve_greedy, SolverKind},
+    alg::{cand_gen_nn, lkh::{solve_lkh, KOpt}, solvers::solve_greedy, SolverKind},
     data::{DataStore, Metric, NodeIndex, NodeKind},
-    tour::{TourOrder, TwoLevelList},
+    tour::{Tour, TourOrder, TwoLevelList, UpdateTourError},
 };
 
 #[derive(Debug)]
@@ -94,6 +94,20 @@ impl<M> Model<M> {
         };
 
         result.unwrap()
+    }
+    // TODO: should return status and/or result.
+    pub fn solve_lkh(&mut self, config: &RunConfig, kopt:KOpt, trials: usize) -> Result<TourOrder, UpdateTourError> {
+        self.complete();
+
+        let mut tour = TwoLevelList::new(&self.store, self.groupsize);
+        cand_gen_nn(&mut tour, config.cands);
+
+        match config.solver {
+            SolverKind::Greedy(ref starters) => solve_greedy(&mut tour, starters)?,
+        };
+
+        solve_lkh(&mut tour, kopt, trials)?;
+        Ok(tour.tour_order())
     }
 }
 
