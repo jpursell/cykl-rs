@@ -112,3 +112,30 @@ where
 
     Ok(0.)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{data::DataStore, tour::TwoLevelList};
+
+    use super::*;
+
+    #[test]
+    fn test_solve_lkh() {
+        let points = vec![[0.0, 0.0], [1.0, 0.0],[0.0,1.0]];
+        let capacity = points.len();
+        let mut store = DataStore::with_capacity(crate::data::Metric::Euc2d, capacity);
+        for point in points {
+            store.add(crate::data::NodeKind::Target, point.to_vec(), ());
+        }
+        store.compute();
+        let groupsize = 13;
+        let mut tour = TwoLevelList::new(&store, groupsize);
+        let trials = 1;
+        let result = solve_lkh(&mut tour, KOpt::Opt2, trials);
+        if let Err(err) = result {
+            dbg!(err);
+            panic!("Got error")
+        }
+        dbg!(tour.tour_order().order());
+    }
+}
